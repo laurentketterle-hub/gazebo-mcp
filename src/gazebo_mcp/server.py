@@ -139,5 +139,36 @@ def gazebo_step(steps: int = 1) -> str:
     return _j(get_backend().step(steps))
 
 
+@mcp.tool()
+def model_spawn(
+    name: str,
+    model_type: str = "box",
+    x: float = 0.0,
+    y: float = 0.0,
+    z: float = 0.5,
+    yaw: float = 0.0,
+) -> str:
+    """Spawn a model in the mock world and return updated world state.
+
+    State is consistent across model_spawn, model_delete, gazebo_list_models, and world_snapshot.
+    """
+    result = get_backend().spawn(name, model_type, x, y, z, yaw)
+    if result.get("ok"):
+        result["world_snapshot"] = get_backend().snapshot()
+    return _j(result)
+
+
+@mcp.tool()
+def model_delete(name: str) -> str:
+    """Delete a model from the mock world and return updated world state.
+
+    State is consistent across model_spawn, model_delete, gazebo_list_models, and world_snapshot.
+    """
+    result = get_backend().delete(name)
+    if result.get("ok"):
+        result["world_snapshot"] = get_backend().snapshot()
+    return _j(result)
+
+
 def run_stdio() -> None:
     mcp.run(transport="stdio")

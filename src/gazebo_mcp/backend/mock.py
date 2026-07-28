@@ -5,6 +5,8 @@ from __future__ import annotations
 import time
 from typing import Any
 
+from gazebo_mcp.config import spawn_allowlist
+
 
 class MockBackend:
     name = "mock"
@@ -172,6 +174,14 @@ class MockBackend:
         z: float,
         yaw: float = 0.0,
     ) -> dict[str, Any]:
+        # Check spawn allowlist
+        allowed = spawn_allowlist()
+        if allowed is not None and model_type.lower() not in allowed:
+            return {
+                "ok": False,
+                "error": f"model_type '{model_type}' not in GAZEBO_MCP_SPAWN_ALLOWLIST",
+                "allowlist": sorted(allowed),
+            }
         if name in self._models:
             return {"ok": False, "error": f"model {name} already exists"}
         self._models[name] = {

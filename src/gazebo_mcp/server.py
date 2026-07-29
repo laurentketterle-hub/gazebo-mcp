@@ -170,5 +170,42 @@ def model_delete(name: str) -> str:
     return _j(result)
 
 
+@mcp.tool()
+def model_exists(name: str) -> str:
+    """Check whether a model exists in the current world."""
+    return _j(get_backend().model_exists(name))
+
+
+@mcp.tool()
+def model_info(name: str) -> str:
+    """Get detailed model information: pose, twist, type, protection status."""
+    return _j(get_backend().model_info(name))
+
+
+@mcp.tool()
+def model_reset() -> str:
+    """Remove all user-spawned models and re-seed the world to its initial state."""
+    return _j(get_backend().model_reset())
+
+
+@mcp.tool()
+def model_batch_spawn(models: str) -> str:
+    """Spawn multiple models from a JSON list.
+
+    ``models`` must be a JSON string: ``[{"name":"a","model_type":"box","x":0,...}, ...]``.
+
+    Returns per-model results plus a combined summary.
+    """
+    import json as _json
+    parsed = _json.loads(models) if isinstance(models, str) else models
+    return _j(get_backend().model_batch_spawn(parsed))
+
+
+@mcp.tool()
+def model_types() -> str:
+    """List supported model types and current allowlist state."""
+    return _j(get_backend().model_types())
+
+
 def run_stdio() -> None:
     mcp.run(transport="stdio")

@@ -200,6 +200,93 @@ class MockBackend:
         del self._models[name]
         return {"ok": True, "deleted": name}
 
+    def model_exists(self, name: str) -> dict[str, Any]:
+        """Check whether a model exists in the current world."""
+        return {
+            "ok": True,
+            "name": name,
+            "exists": name in self._models,
+        }
+
+    def model_info(self, name: str) -> dict[str, Any]:
+        """Return detailed information about a model including pose, twist, type, and
+        protection status."""
+        m = self._models.get(name)
+        if not m:
+            return {"ok": False, "error": f"unknown model {name}"}
+        return {
+            "ok": True,
+            "name": m["name"],
+            "type": m.get("type", "unknown"),
+            "pose": m.get("pose", {}),
+            "twist": m.get("twist", self._twist()),
+            "is_ground_plane": name == "ground_plane",
+            "is_protected": name == "ground_plane",
+        }
+
+    def model_reset(self) -> dict[str, Any]:
+        """Remove all user-spawned models and re-seed the world.
+
+        Clears all models (including any modifications to seed models) and
+        re-seeds the demo world to its initial state.
+        """
+        self.seed_demo()
+        return {
+            "ok": True,
+            "message": "All user models cleared; world re-seeded",
+            "remaining_models": list(self._models.keys()),
+            "model_count": len(self._models),
+        }
+
+    def model_batch_spawn(
+        self,
+        models: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Spawn multiple models in a single atomic batch.
+
+        Each model dict requires ``name``. Optional keys: ``model_type``
+        (default ``"box"``), ``x``, ``y``, ``z`` (default ``0.5``),
+        ``yaw`` (default ``0.0``).
+
+        Returns per-model results plus a combined summary.
+        """
+        results = []
+        spawned: list[str] = []
+        errors: list[dict[str, Any]] = []
+        for spec in models:
+            r = self.spawn(
+                name=spec["name"],
+                model_type=spec.get("model_type", "box"),
+                x=float(spec.get("x", 0.0)),
+                y=float(spec.get("y", 0.0)),
+                z=float(spec.get("z", 0.5)),
+                yaw=float(spec.get("yaw", 0.0)),
+            )
+            results.append(r)
+            if r.get("ok"):
+                spawned.append(spec["name"])
+            else:
+                errors.append({"name": spec["name"], "error": r.get("error")})
+        return {
+            "ok": len(errors) == 0,
+            "total": len(models),
+            "spawned": len(spawned),
+            "spawned_names": spawned,
+            "errors": errors,
+            "results": results,
+        }
+
+    def model_types(self) -> dict[str, Any]:
+        """Return the set of supported model types and the active allowlist state."""
+        allowed = spawn_allowlist()
+        builtin = ["box", "sphere", "cylinder", "plane", "robot", "urdf", "sdf"]
+        return {
+            "ok": True,
+            "builtin_types": builtin,
+            "allowlist": sorted(allowed) if allowed else None,
+            "allowlist_active": allowed is not None,
+        }
+
     def get_pose(self, name: str) -> dict[str, Any]:
         m = self._models.get(name)
         if not m:

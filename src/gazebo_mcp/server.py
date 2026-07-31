@@ -141,3 +141,22 @@ def gazebo_step(steps: int = 1) -> str:
 
 def run_stdio() -> None:
     mcp.run(transport="stdio")
+@mcp.tool()
+def gazebo_sensor_lidar(
+    ranges_count: int = 360,
+    max_range: float = 10.0,
+    noise: float = 0.02,
+) -> str:
+    """Return a synthetic 2D LiDAR scan (mock ranges + intensities)."""
+    return _j(get_backend().sensor_lidar_scan(ranges_count, max_range, noise))
+
+
+@mcp.tool()
+def gazebo_sensor_camera(
+    width: int = 640,
+    height: int = 480,
+    encoding: str = "rgb8",
+) -> str:
+    """Return synthetic camera frame metadata (intrinsics + pixel stats)."""
+    return _j(get_backend().sensor_camera_image(width, height, encoding))
+

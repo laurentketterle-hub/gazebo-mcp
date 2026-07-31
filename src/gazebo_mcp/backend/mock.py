@@ -227,3 +227,126 @@ class MockBackend:
         self._sim_time += 0.001 * n
         self._paused = True
         return {"ok": True, "steps": n, "sim_time_sec": round(self._sim_time, 3), "paused": True}
+
+    def sensor_snapshot(
+        self,
+        sensor_type: str = "lidar",
+        model_name: str | None = None,
+    ) -> dict[str, Any]:
+        """Return synthetic sensor frames for agent workflows.
+
+        Args:
+            sensor_type: "lidar" or "camera" (default: "lidar")
+            model_name: Optional model to attach sensor to (uses first
+                        non-ground model if None)
+
+        Returns:
+            dict with ok, sensor_type, frame data, and schema version.
+
+        Schema (v1):
+            lidar: {
+                "ok": true,
+                "sensor_type": "lidar",
+                "schema_version": 1,
+                "model": str,
+                "timestamp_sec": float,
+                "frame": {
+                    "points": [{"x", "y", "z", "intensity"}, ...],
+                    "count": int,
+                    "range_min_m": float,
+                    "range_max_m": float,
+                    "horizontal_fov_deg": float,
+                    "vertical_fov_deg": float,
+                }
+            }
+            camera: {
+                "ok": true,
+                "sensor_type": "camera",
+                "schema_version": 1,
+                "model": str,
+                "timestamp_sec": float,
+                "frame": {
+                    "width": int,
+                    "height": int,
+                    "format": str,
+                    "pixels_base64": str,  # placeholder
+                    "description": str,
+                }
+            }
+        """
+        import math
+        import hashlib
+        import random
+
+        # Pick a model for the sensor
+        valid_models = [n for n in self._models if n != "ground_plane"]
+        if model_name:
+            if model_name not in self._models:
+                return {"ok": False, "error": f"unknown model {model_name}"}
+            target = model_name
+        elif valid_models:
+            target = valid_models[0]
+        else:
+            return {"ok": False, "error": "no valid models for sensor attachment"}
+
+        model = self._models[target]
+        pose = model.get("pose", {"x": 0, "y": 0, "z": 0, "yaw": 0})
+        timestamp = self._sim_time if self._paused else (time.time() - self._t0)
+
+        # Deterministic seed from model + sim_time for reproducibility
+        seed = int(hashlib.sha256(
+            f"{target}:{timestamp:.3f}".encode()
+        ).hexdigest()[:8], 16)
+        rng = random.Random(seed)
+
+        if sensor_type == "lidar":
+            n_points = 360  # 1 degree resolution
+            points = []
+            for i in range(n_points):
+                angle_rad = math.radians(i)
+                dist = rng.uniform(0.5, 10.0)
+                px = pose["x"] + dist * math.cos(angle_rad + pose.get("yaw", 0))
+                py = pose["y"] + dist * math.sin(angle_rad + pose.get("yaw", 0))
+                pz = pose["z"] + rng.uniform(-0.1, 0.1)
+                intensity = round(rng.uniform(0.0, 1.0), 3)
+                points.append({
+                    "x": round(px, 3),
+                    "y": round(py, 3),
+                    "z": round(pz, 3),
+                    "intensity": intensity,
+                })
+            frame = {
+                "points": points,
+                "count": len(points),
+                "range_min_m": 0.1,
+                "range_max_m": 30.0,
+                "horizontal_fov_deg": 360.0,
+                "vertical_fov_deg": 30.0,
+            }
+        elif sensor_type == "camera":
+            frame = {
+                "width": 640,
+                "height": 480,
+                "format": "rgb8",
+                "pixels_base64": "iVBORw0KGgo...=",  # placeholder
+                "description": (
+                    f"Synthetic camera view from {target} at "
+                    f"({pose['x']:.1f}, {pose['y']:.1f}, {pose['z']:.1f}). "
+                    f"Placeholder — real implementation would generate "
+                    f"a scene render or connect to a Gazebo camera topic."
+                ),
+            }
+        else:
+            return {
+                "ok": False,
+                "error": f"unknown sensor_type '{sensor_type}'. Use 'lidar' or 'camera'",
+            }
+
+        return {
+            "ok": True,
+            "sensor_type": sensor_type,
+            "schema_version": 1,
+            "model": target,
+            "timestamp_sec": round(timestamp, 3),
+            "frame": frame,
+        }

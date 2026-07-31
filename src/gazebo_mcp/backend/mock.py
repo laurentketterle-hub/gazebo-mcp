@@ -227,3 +227,25 @@ class MockBackend:
         self._sim_time += 0.001 * n
         self._paused = True
         return {"ok": True, "steps": n, "sim_time_sec": round(self._sim_time, 3), "paused": True}
+
+    # --- Sensor snapshot methods (issue #23) ---
+
+    def sensor_lidar_scan(
+        self,
+        ranges_count: int = 360,
+        max_range: float = 10.0,
+        noise: float = 0.02,
+    ) -> dict:
+        """Return a synthetic 2D LiDAR scan."""
+        from gazebo_mcp.backend.sensor_mock import generate_lidar_scan
+        return generate_lidar_scan(ranges_count=ranges_count, max_range=max_range, noise=noise)
+
+    def sensor_camera_image(
+        self,
+        width: int = 640,
+        height: int = 480,
+        encoding: str = "rgb8",
+    ) -> dict:
+        """Return synthetic camera frame metadata."""
+        from gazebo_mcp.backend.sensor_mock import generate_camera_image
+        return generate_camera_image(width=width, height=height, encoding=encoding)

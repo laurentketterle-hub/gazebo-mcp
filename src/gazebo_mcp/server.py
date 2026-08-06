@@ -139,36 +139,5 @@ def gazebo_step(steps: int = 1) -> str:
     return _j(get_backend().step(steps))
 
 
-@mcp.tool()
-def gazebo_sensor_snapshot(
-    sensor_type: str = "lidar",
-    model_name: str = "",
-) -> str:
-    """Return synthetic sensor frame (lidar point cloud or camera view).
-
-    Args:
-        sensor_type: 'lidar' (360-degree point cloud) or 'camera' (640x480 RGB)
-        model_name: Attach sensor to this model (uses first non-ground model if empty)
-
-    Returns JSON with schema_version, model, timestamp, and frame data.
-    See the sensor_snapshot docstring in MockBackend for full schema.
-    """
-    backend = get_backend()
-    model = model_name.strip() if model_name.strip() else None
-    return _j(backend.sensor_snapshot(sensor_type, model))
-
-
-@mcp.resource("gazebo://sensors/lidar")
-def lidar_snapshot() -> str:
-    """Snapshot of synthetic lidar point cloud from current world."""
-    return _j(get_backend().sensor_snapshot("lidar"))
-
-
-@mcp.resource("gazebo://sensors/camera")
-def camera_snapshot() -> str:
-    """Snapshot of synthetic camera view from current world."""
-    return _j(get_backend().sensor_snapshot("camera"))
-
-
 def run_stdio() -> None:
     mcp.run(transport="stdio")

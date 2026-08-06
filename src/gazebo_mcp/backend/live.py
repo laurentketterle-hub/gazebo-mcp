@@ -149,10 +149,3 @@ class LiveBackend:
 
     def step(self, steps: int = 1) -> dict[str, Any]:
         return self._unsupported("step")
-
-    def sensor_snapshot(
-        self,
-        sensor_type: str = "lidar",
-        model_name: str | None = None,
-    ) -> dict[str, Any]:
-        return self._unsupported("sensor_snapshot")

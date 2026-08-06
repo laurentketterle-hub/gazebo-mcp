@@ -1,4 +1,5 @@
 """Tests for sensor snapshot feature."""
+
 from __future__ import annotations
 
 import json
@@ -67,7 +68,8 @@ class TestSensorSnapshot:
         for p in result["frame"]["points"]:
             # Each point distance from model origin should be within sensor range
             import math
-            dist = math.sqrt(p["x"]**2 + p["y"]**2)
+
+            dist = math.sqrt(p["x"] ** 2 + p["y"] ** 2)
             # Points can be far from origin since model may be at non-zero pose
             assert dist >= 0
 
@@ -120,10 +122,7 @@ class TestSensorSnapshot:
         p_a = r_a["frame"]["points"]
         p_b = r_b["frame"]["points"]
         # At least some points should differ
-        differences = sum(
-            1 for i in range(len(p_a))
-            if p_a[i]["x"] != p_b[i]["x"]
-        )
+        differences = sum(1 for i in range(len(p_a)) if p_a[i]["x"] != p_b[i]["x"])
         assert differences > 0
 
     def test_sensor_snapshot_is_json_serializable(self):

@@ -58,18 +58,18 @@ class MockBackend:
             return models
         models.update(
             {
-            "box_1": {
-                "name": "box_1",
-                "type": "box",
-                "pose": {"x": 1.0, "y": 0.0, "z": 0.5, "yaw": 0.0},
-                "twist": self._twist(),
-            },
-            "sphere_1": {
-                "name": "sphere_1",
-                "type": "sphere",
-                "pose": {"x": -1.0, "y": 0.5, "z": 0.5, "yaw": 0.0},
-                "twist": self._twist(),
-            },
+                "box_1": {
+                    "name": "box_1",
+                    "type": "box",
+                    "pose": {"x": 1.0, "y": 0.0, "z": 0.5, "yaw": 0.0},
+                    "twist": self._twist(),
+                },
+                "sphere_1": {
+                    "name": "sphere_1",
+                    "type": "sphere",
+                    "pose": {"x": -1.0, "y": 0.5, "z": 0.5, "yaw": 0.0},
+                    "twist": self._twist(),
+                },
             }
         )
         return models

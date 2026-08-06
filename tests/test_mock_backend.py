@@ -41,7 +41,9 @@ def test_fleet_seed_profile():
     assert {"ground_plane", "robot_0", "robot_1", "robot_2"}.issubset(names)
     poses = [next(m for m in models if m["name"] == f"robot_{i}")["pose"] for i in range(3)]
     assert len({(p["x"], p["y"], p["yaw"]) for p in poses}) == 3
-    assert all(next(m for m in models if m["name"] == f"robot_{i}")["type"] == "robot" for i in range(3))
+    assert all(
+        next(m for m in models if m["name"] == f"robot_{i}")["type"] == "robot" for i in range(3)
+    )
     assert b.world_info()["world"] == "fleet_demo"
 
 

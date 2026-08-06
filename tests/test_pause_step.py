@@ -2,8 +2,8 @@
 
 from gazebo_mcp.backend.mock_sim import (
     mock_pause_simulation,
-    mock_step_simulation,
     mock_resume_simulation,
+    mock_step_simulation,
 )
 
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import typer
 from rich import print as rprint
@@ -53,6 +53,7 @@ def doctor_cmd() -> None:
 def _count_tools() -> int:
     try:
         from gazebo_mcp.server import mcp
+
         tools = getattr(mcp, "_tool_manager", None)
         if tools:
             return len(getattr(tools, "_tools", {}) or {})
@@ -72,13 +73,17 @@ def quickstart_cmd() -> None:
     console.print("  export GAZEBO_MCP_MODE=live")
     console.print("  gazebo-mcp doctor")
     console.print("  gazebo-mcp demo --profile fleet\n")
-    console.print("[dim]Mock mode supports world_list, model_spawn, pose_get/set, step_simulation[/dim]")
+    console.print(
+        "[dim]Mock mode supports world_list, model_spawn, pose_get/set, step_simulation[/dim]"
+    )
     console.print("[dim]Live mode bridges gz-transport for real simulation control[/dim]")
 
 
 @app.command("demo")
 def demo_cmd(
-    profile: str = typer.Option("default", "--profile", help="Mock seed profile: default or fleet."),
+    profile: str = typer.Option(
+        "default", "--profile", help="Mock seed profile: default or fleet."
+    ),
 ) -> None:
     """Offline smoke: seed mock world, spawn, pose, step."""
     set_mode("mock")
@@ -110,8 +115,8 @@ def tools_list() -> None:
 @app.command("call")
 def call_cmd(
     tool: str = typer.Argument(..., help="Short name e.g. doctor or gazebo_doctor"),
-    arg: Optional[list[str]] = typer.Argument(None, help="key=value pairs"),
-    json_file: Optional[Path] = typer.Option(
+    arg: list[str] | None = typer.Argument(None, help="key=value pairs"),
+    json_file: Path | None = typer.Option(
         None,
         "--json-file",
         help="Read tool arguments from a JSON object file; key=value args override it.",

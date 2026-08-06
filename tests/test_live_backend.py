@@ -10,7 +10,7 @@ from gazebo_mcp.backend.mock import MockBackend
 
 
 class BridgeHandler(BaseHTTPRequestHandler):
-    def do_GET(self) -> None:  # noqa: N802
+    def do_GET(self) -> None:
         if self.path == "/health":
             self._json({"ok": True, "service": "gazebo-bridge", "mode": "live"})
             return

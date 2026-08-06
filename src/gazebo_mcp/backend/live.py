@@ -111,7 +111,9 @@ class LiveBackend:
     def snapshot(self) -> dict[str, Any]:
         return self._unsupported("snapshot")
 
-    def spawn(self, name: str, model_type: str, x: float, y: float, z: float, yaw: float = 0.0) -> dict[str, Any]:
+    def spawn(
+        self, name: str, model_type: str, x: float, y: float, z: float, yaw: float = 0.0
+    ) -> dict[str, Any]:
         allowed = spawn_allowlist()
         normalized = (model_type or "").strip().lower()
         if allowed is not None and normalized not in allowed:

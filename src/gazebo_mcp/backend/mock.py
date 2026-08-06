@@ -227,3 +227,78 @@ class MockBackend:
         self._sim_time += 0.001 * n
         self._paused = True
         return {"ok": True, "steps": n, "sim_time_sec": round(self._sim_time, 3), "paused": True}
+
+    def sensor_snapshot(
+        self, sensor_type: str = "lidar", model_name: str | None = None
+    ) -> dict[str, Any]:
+        """Return a deterministic synthetic sensor snapshot for the given model."""
+        import base64
+        import hashlib
+        import math
+
+        sensor_type = (sensor_type or "lidar").strip().lower()
+
+        if sensor_type not in ("lidar", "camera"):
+            return {"ok": False, "error": f"unknown sensor_type {sensor_type!r}"}
+
+        # Pick a model
+        non_ground = {n: m for n, m in self._models.items() if n != "ground_plane"}
+        if model_name is not None:
+            if model_name not in self._models:
+                return {"ok": False, "error": f"unknown model {model_name!r}"}
+            model = self._models[model_name]
+        else:
+            if not non_ground:
+                return {"ok": False, "error": "no valid models (only ground_plane exists)"}
+            model = next(iter(non_ground.values()))
+
+        # Deterministic seed from model name + pose + sim time
+        pose = model.get("pose", {})
+        seed_str = f"{model['name']}:{pose.get('x'):.2f}:{pose.get('y'):.2f}:{pose.get('z'):.2f}:{self._sim_time:.3f}"
+        seed_hash = hashlib.sha256(seed_str.encode()).digest()
+        seed = int.from_bytes(seed_hash[:4], "big")
+
+        rng_state = seed
+        def _rand() -> float:
+            nonlocal rng_state
+            rng_state = (rng_state * 1103515245 + 12345) & 0x7FFFFFFF
+            return rng_state / 0x7FFFFFFF
+
+        result: dict[str, Any] = {
+            "ok": True,
+            "sensor_type": sensor_type,
+            "schema_version": 1,
+            "model": model["name"],
+            "timestamp_sec": round(self._sim_time, 3),
+        }
+
+        if sensor_type == "lidar":
+            points = []
+            for i in range(360):
+                angle = 2 * math.pi * i / 360
+                r = 0.5 + _rand() * 29.4  # within range [0.1, 30]
+                points.append({
+                    "x": round(r * math.cos(angle), 4),
+                    "y": round(r * math.sin(angle), 4),
+                    "z": round(_rand() * 0.5 - 0.25, 4),
+                    "intensity": round(_rand(), 4),
+                })
+            result["frame"] = {
+                "count": 360,
+                "points": points,
+                "horizontal_fov_deg": 360.0,
+                "vertical_fov_deg": 30.0,
+                "range_min_m": 0.1,
+                "range_max_m": 30.0,
+            }
+        else:  # camera
+            pixels = bytes(int(_rand() * 255) for _ in range(64))
+            result["frame"] = {
+                "width": 640,
+                "height": 480,
+                "format": "rgb8",
+                "pixels_base64": base64.b64encode(pixels).decode("ascii"),
+                "description": "Synthetic camera view — Placeholder RGB8 image (mock Gazebo)",
+            }
+
+        return result
